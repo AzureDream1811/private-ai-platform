@@ -1,0 +1,27 @@
+version: '3'
+
+tasks:
+  migrate:
+    desc: Generate a new Alembic migration
+    cmds:
+      - alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
+  upgrade:
+    desc: Apply all migrations
+    cmds:
+      - alembic upgrade head
+
+  downgrade:
+    desc: Rollback one migration
+    cmds:
+      - alembic downgrade -1
+
+  current:
+    desc: Show current database revision
+    cmds:
+      - alembic current
+
+  history:
+    desc: Show migration history
+    cmds:
+      - alembic history

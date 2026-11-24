@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:lastest
+    image: postgres:17
     container_name: private-ai-postgres
 
     restart: unless-stopped
