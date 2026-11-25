@@ -156,3 +156,4 @@ def logout(db: Session, refresh_token: str) -> None:
     except Exception:
         db.rollback()
         raise
+
