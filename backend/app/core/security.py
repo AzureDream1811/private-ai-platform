@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from uuid import uuid4
 
 import jwt
@@ -87,3 +88,7 @@ def decode_token(token: str, expected_type: str) -> dict:
         raise ValueError("Token has expired") from exc
     except jwt.InvalidTokenError as exc:
         raise ValueError("Invalid token") from exc
+
+def hash_refresh_token(token: str) -> str:
+        return sha256(token.encode("utf-8")).hexdigest()
+
