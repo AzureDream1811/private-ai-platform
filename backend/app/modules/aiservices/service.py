@@ -53,3 +53,63 @@ def create_ai_service(
     except Exception:
         db.rollback()
         raise
+
+def update_ai_service(
+    db: Session,
+    service_key: str,
+    description: str | None = None,
+) -> ServiceResponse:
+
+    existing = get_service_by_service_key(db, service_key)
+    if not existing:
+        raise ValueError(f"Service with service_key '{service_key}' does not exist.")
+
+    try:
+        if description is not None:
+            existing.description = description
+
+        db.commit()
+        db.refresh(existing)
+
+        return ServiceResponse.model_validate(
+            {
+                "id": existing.id,
+                "name": existing.name,
+                "service_key": existing.service_key,
+                "description": existing.description,
+                "is_active": existing.is_active,
+            }
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
+def disable_ai_service(
+    db: Session,
+    service_key: str,
+) -> ServiceResponse:
+
+    existing = get_service_by_service_key(db, service_key)
+    if not existing:
+        raise ValueError(f"Service with service_key '{service_key}' does not exist.")
+
+    try:
+        existing.is_active = False
+
+        db.commit()
+        db.refresh(existing)
+
+        return ServiceResponse.model_validate(
+            {
+                "id": existing.id,
+                "name": existing.name,
+                "service_key": existing.service_key,
+                "description": existing.description,
+                "is_active": existing.is_active,
+            }
+        )
+
+    except Exception:
+        db.rollback()
+        raise

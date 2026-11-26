@@ -26,3 +26,12 @@ def get_services_with_filters(db: Session, page, size, name=None, is_active=None
 def create_service(db: Session, service: AIService) -> None:
     db.add(service)
     db.flush()
+
+def update_service(db: Session, service: AIService) -> None:
+    db.add(service)
+    db.flush()
+
+def disable_service(db: Session, service: AIService) -> None:
+    service.is_active = False
+    db.add(service)
+    db.flush()
