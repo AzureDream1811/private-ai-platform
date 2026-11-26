@@ -14,11 +14,13 @@ from backend.app.modules.aiservices.schemas import (
 from backend.app.modules.aiservices.service import (
     create_ai_service,
     delete_ai_service,
+    get_service,
     get_services,
     set_ai_service_active,
     update_ai_service,
 )
 
+router = APIRouter()
 DBSession = Annotated[Session, Depends(get_db)]
 public_router = APIRouter(dependencies=[Depends(get_current_user)])
 admin_router = APIRouter(dependencies=[Depends(get_current_admin_user)])
@@ -41,10 +43,8 @@ def list_services(
     )
 
 
-@public_router.get(
-    "/{service_key}",
-)
-def get_service(db: DBSession, service_key: str) -> ServiceResponse:
+@public_router.get("/{service_key}")
+def get_service_detail(db: DBSession, service_key: str) -> ServiceResponse:
     return get_service(db, service_key)
 
 
@@ -61,8 +61,8 @@ def update_service(
 
 
 @admin_router.delete("/{service_key}", status_code=204)
-def delete_service(db: DBSession, service_key: str) -> ServiceResponse:
-    return delete_ai_service(db, service_key)
+def delete_service(db: DBSession, service_key: str) -> None:
+    delete_ai_service(db, service_key)
 
 
 @admin_router.patch("/{service_key}/activate")
@@ -73,3 +73,7 @@ def activate_service(db: DBSession, service_key: str) -> ServiceResponse:
 @admin_router.patch("/{service_key}/deactivate")
 def deactivate_service(db: DBSession, service_key: str) -> ServiceResponse:
     return set_ai_service_active(db, service_key, False)
+
+
+router.include_router(public_router)
+router.include_router(admin_router)

@@ -26,6 +26,7 @@ def _get_existing_service(db: Session, service_key: str) -> AIService:
     return existing
 
 
+
 def _commit_and_refresh(db: Session, obj: AIService) -> None:
     try:
         db.commit()
@@ -92,8 +93,13 @@ def set_ai_service_active(
 
 def delete_ai_service(db: Session, service_key: str) -> ServiceResponse:
     service = _get_existing_service(db, service_key)
-    delete_service(db, service)
-    _commit_and_refresh(db, service)
+
+    try:
+        delete_service(db, service)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
     return ServiceResponse.model_validate(service)
 
@@ -109,7 +115,7 @@ def get_services(
     return get_services_with_filters(db, page, size, name, is_active)
 
 
-def get_service(db: Session, service_key: str) -> ServiceResponse | None:
+def get_service(db: Session, service_key: str) -> ServiceResponse:
     existing = _get_existing_service(db, service_key)
 
     return ServiceResponse.model_validate(existing)
