@@ -11,6 +11,7 @@ class ServiceResponse(BaseModel):
 
     name: str
     description: str | None = None
+    service_key: str
     is_active: bool
 
 class UpdateServiceRequest(BaseModel):

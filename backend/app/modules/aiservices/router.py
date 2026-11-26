@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.app.core.dependencies import get_current_admin_user, get_current_user
@@ -19,11 +19,12 @@ from backend.app.modules.aiservices.service import (
     update_ai_service,
 )
 
-router = APIRouter()
 DBSession = Annotated[Session, Depends(get_db)]
+public_router = APIRouter(dependencies=[Depends(get_current_user)])
+admin_router = APIRouter(dependencies=[Depends(get_current_admin_user)])
 
 
-@router.get("/", dependencies=[Depends(get_current_user)])
+@public_router.get("/")
 def list_services(
     db: DBSession,
     page: int = Query(1, ge=1),
@@ -40,67 +41,35 @@ def list_services(
     )
 
 
-@router.get(
+@public_router.get(
     "/{service_key}",
-    dependencies=[Depends(get_current_user)],
 )
 def get_service(db: DBSession, service_key: str) -> ServiceResponse:
-    try:
-        return get_service(db, service_key)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return get_service(db, service_key)
 
 
-@router.post("/", dependencies=[Depends(get_current_admin_user)], status_code=201)
+@admin_router.post("/", status_code=201)
 def create_service(db: DBSession, request: CreateServiceRequest) -> ServiceResponse:
-    try:
-        return create_ai_service(
-            db, request.name, request.service_key, request.description
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return create_ai_service(db, request.name, request.service_key, request.description)
 
 
-@router.patch(
-    "/{service_key}",
-    dependencies=[Depends(get_current_admin_user)],
-)
+@admin_router.patch("/{service_key}")
 def update_service(
     db: DBSession, service_key: str, request: UpdateServiceRequest
 ) -> ServiceResponse:
-    try:
-        return update_ai_service(db, service_key, request.name, request.description)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return update_ai_service(db, service_key, request.name, request.description)
 
 
-@router.delete(
-    "/{service_key}", dependencies=[Depends(get_current_admin_user)], status_code=204
-)
+@admin_router.delete("/{service_key}", status_code=204)
 def delete_service(db: DBSession, service_key: str) -> ServiceResponse:
-    try:
-        return delete_ai_service(db, service_key)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return delete_ai_service(db, service_key)
 
 
-@router.patch(
-    "/{service_key}/activate",
-    dependencies=[Depends(get_current_admin_user)],
-)
+@admin_router.patch("/{service_key}/activate")
 def activate_service(db: DBSession, service_key: str) -> ServiceResponse:
-    try:
-        return set_ai_service_active(db, service_key, True)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return set_ai_service_active(db, service_key, True)
 
 
-@router.patch(
-    "/{service_key}/deactivate",
-    dependencies=[Depends(get_current_admin_user)],
-)
+@admin_router.patch("/{service_key}/deactivate")
 def deactivate_service(db: DBSession, service_key: str) -> ServiceResponse:
-    try:
-        return set_ai_service_active(db, service_key, False)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return set_ai_service_active(db, service_key, False)
