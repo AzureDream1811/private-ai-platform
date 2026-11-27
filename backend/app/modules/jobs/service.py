@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.database.models.enum import JobStatus
 from backend.app.database.models.inference_job import InferenceJob
+from backend.app.modules.jobs.exceptions import JobNotFound, JobResultNotFound
 from backend.app.modules.jobs.repository import (
     create_job,
     get_job_by_id,
@@ -41,7 +42,7 @@ def get_job_by_id_service(
 ) -> InferenceJobResponse | None:
     job = get_job_by_id(db, user_id, job_id)
     if job is None:
-        return None
+        raise JobNotFound("Job not found.")
     return InferenceJobResponse.model_validate(job)
 
 
@@ -50,7 +51,7 @@ def get_job_result_service(
 ) -> InferenceResultResponse | None:
     job_result = get_job_result(db, user_id, job_id)
     if job_result is None:
-        return None
+        raise JobResultNotFound("Job result not found.")
     return InferenceResultResponse.model_validate(job_result)
 
 
