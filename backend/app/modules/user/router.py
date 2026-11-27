@@ -22,19 +22,18 @@ from backend.app.modules.user.service import (
 
 router = APIRouter()
 DBSession = Annotated[Session, Depends(get_db)]
-current_user = Annotated[User, Depends(get_current_user)]
-current_admin_user = Annotated[User, Depends(get_current_admin_user)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.get("/me")
-def get_current_user_profile(db: DBSession, current_user: current_user):
+def get_current_user_profile(db: DBSession, current_user: CurrentUser):
 
     return get_profile(db, current_user.id)
 
 
 @router.patch("/me")
 def update_current_user_profile(
-    db: DBSession, current_user: current_user, request: UpdateUserRequest
+    db: DBSession, current_user: CurrentUser, request: UpdateUserRequest
 ):
 
     return update_profile(
@@ -42,18 +41,18 @@ def update_current_user_profile(
     )
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", dependencies=[Depends(get_current_admin_user)])
 def admin_get_user_profile(db: DBSession, user_id: int):
     return get_user_details(db, user_id)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(get_current_admin_user)])
 def admin_list_users(
     db: DBSession, page: int = Query(1, ge=1), size: int = Query(10, ge=1, le=100)
 ) -> Page[AdminUserResponse]:
     return get_all_users(db, page, size)
 
 
-@router.patch("/{user_id}")
+@router.patch("/{user_id}", dependencies=[Depends(get_current_admin_user)])
 def admin_update_user_role(db: DBSession, user_id: int, request: UpdateUserRoleRequest):
     return update_user_role(db, user_id, request.role)

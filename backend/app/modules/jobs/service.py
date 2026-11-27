@@ -5,6 +5,7 @@ from backend.app.database.models.inference_job import InferenceJob
 from backend.app.modules.jobs.exceptions import JobNotFound, JobResultNotFound
 from backend.app.modules.jobs.repository import (
     create_job,
+    get_all_jobs,
     get_job_by_id,
     get_job_result,
     get_user_jobs,
@@ -39,7 +40,7 @@ def create_job_service(
 
 def get_job_by_id_service(
     db: Session, user_id: int, job_id: int
-) -> InferenceJobResponse | None:
+) -> InferenceJobResponse:
     job = get_job_by_id(db, user_id, job_id)
     if job is None:
         raise JobNotFound("Job not found.")
@@ -48,7 +49,7 @@ def get_job_by_id_service(
 
 def get_job_result_service(
     db: Session, user_id: int, job_id: int
-) -> InferenceResultResponse | None:
+) -> InferenceResultResponse:
     job_result = get_job_result(db, user_id, job_id)
     if job_result is None:
         raise JobResultNotFound("Job result not found.")
@@ -59,6 +60,16 @@ def get_user_jobs_service(
     db: Session, user_id: int, page: int, size: int, status: JobStatus | None = None
 ) -> Page[InferenceJobResponse]:
     jobs, total = get_user_jobs(db, user_id, page, size, status)
+    job_responses = [InferenceJobResponse.model_validate(job) for job in jobs]
+    return Page[InferenceJobResponse](
+        items=job_responses, total=total, page=page, size=size, pages=-(-total // size)
+    )
+
+
+def get_all_jobs_service(
+    db: Session, page: int, size: int, status: JobStatus | None = None
+) -> Page[InferenceJobResponse]:
+    jobs, total = get_all_jobs(db, page, size, status)
     job_responses = [InferenceJobResponse.model_validate(job) for job in jobs]
     return Page[InferenceJobResponse](
         items=job_responses, total=total, page=page, size=size, pages=-(-total // size)

@@ -51,6 +51,22 @@ def get_user_jobs(
     return list(items), total
 
 
+def get_all_jobs(db: Session, page: int, size: int, status: JobStatus | None = None) -> tuple[list[InferenceJob], int]:
+    stmt = select(InferenceJob)
+    count_stmt = select(func.count())
+
+    if status is not None:
+        stmt = stmt.where(InferenceJob.status == status)
+        count_stmt = count_stmt.where(InferenceJob.status == status)
+
+    total = db.scalar(count_stmt) or 0
+    items = db.scalars(
+        stmt.order_by(InferenceJob.created_at.desc(), InferenceJob.id.desc())
+        .offset((page - 1) * size)
+        .limit(size)
+    ).all()
+    return list(items), total
+
 def get_job_result(db: Session, user_id: int, job_id: int) -> InferenceResult | None:
     stmt = (
         select(InferenceResult)

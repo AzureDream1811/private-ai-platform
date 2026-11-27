@@ -8,6 +8,11 @@ from backend.app.database.models.enum import JobStatus
 T = TypeVar("T")
 
 
+class InferenceJobCreateRequest(BaseModel):
+    service_id: int
+    input_file: str
+    parameters: dict | None = None
+
 class InferenceJobResponse(BaseModel):
     model_config = {"from_attributes": True}
 
