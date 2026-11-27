@@ -1,0 +1,69 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from backend.app.core.dependencies import get_current_admin_user, get_current_user
+from backend.app.database.models.enum import JobStatus
+from backend.app.database.models.user import User
+from backend.app.database.session import get_db
+from backend.app.modules.jobs.schemas import (
+    InferenceJobResponse,
+    InferenceResultResponse,
+    Page,
+)
+from backend.app.modules.jobs.service import (
+    create_job_service,
+    get_job_by_id_service,
+    get_job_result_service,
+    get_user_jobs_service,
+)
+
+router = APIRouter()
+DBSession = Annotated[Session, Depends(get_db)]
+current_user = Annotated[User, Depends(get_current_user)]
+current_admin_user = Annotated[User, Depends(get_current_admin_user)]
+
+
+@router.post("/jobs")
+def create_job(
+    db: DBSession,
+    current_user: current_user,
+    service_id: int,
+    input_file: str,
+    parameters: dict | None = None,
+) -> InferenceJobResponse:
+
+    return create_job_service(db, current_user.id, service_id, input_file, parameters)
+
+
+@router.get("/jobs")
+def get_user_jobs(
+    db: DBSession,
+    current_user: current_user,
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    status: Annotated[JobStatus | None, Query()] = None,
+) -> Page[InferenceJobResponse]:
+
+    return get_user_jobs_service(db, current_user.id, page, size, status)
+
+
+@router.get("/jobs/{job_id}")
+def get_job_by_id(
+    db: DBSession,
+    current_user: current_user,
+    job_id: int,
+) -> InferenceJobResponse | None:
+
+    return get_job_by_id_service(db, current_user.id, job_id)
+
+
+@router.get("/jobs/{job_id}/result")
+def get_job_result(
+    db: DBSession,
+    current_user: current_user,
+    job_id: int,
+) -> InferenceResultResponse | None:
+
+    return get_job_result_service(db, current_user.id, job_id)

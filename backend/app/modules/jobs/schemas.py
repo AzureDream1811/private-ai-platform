@@ -1,8 +1,11 @@
 from datetime import datetime
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
 from backend.app.database.models.enum import JobStatus
+
+T = TypeVar("T")
 
 
 class InferenceJobResponse(BaseModel):
@@ -15,6 +18,7 @@ class InferenceJobResponse(BaseModel):
     status: JobStatus
     created_at: datetime
 
+
 class InferenceResultResponse(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -23,3 +27,10 @@ class InferenceResultResponse(BaseModel):
     error_message: str | None
     created_at: datetime
 
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    size: int
+    pages: int

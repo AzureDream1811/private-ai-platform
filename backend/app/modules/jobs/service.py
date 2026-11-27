@@ -11,6 +11,7 @@ from backend.app.modules.jobs.repository import (
 from backend.app.modules.jobs.schemas import (
     InferenceJobResponse,
     InferenceResultResponse,
+    Page,
 )
 
 
@@ -55,7 +56,9 @@ def get_job_result_service(
 
 def get_user_jobs_service(
     db: Session, user_id: int, page: int, size: int, status: JobStatus | None = None
-) -> tuple[list[InferenceJobResponse], int]:
+) -> Page[InferenceJobResponse]:
     jobs, total = get_user_jobs(db, user_id, page, size, status)
     job_responses = [InferenceJobResponse.model_validate(job) for job in jobs]
-    return job_responses, total
+    return Page[InferenceJobResponse](
+        items=job_responses, total=total, page=page, size=size, pages=-(-total // size)
+    )
