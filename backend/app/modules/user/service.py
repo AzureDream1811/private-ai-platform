@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 from backend.app.core.security import hash_password
 from backend.app.database.models.enum import UserRole
 from backend.app.database.models.user import User
+from backend.app.modules.user.exceptions import (
+    InvalidUserDataError,
+    ResourcesAlreadyExistsError,
+    UserNotFound,
+)
 from backend.app.modules.user.repository import (
     get_user_by_id,
     get_users,
@@ -22,10 +27,15 @@ def _commit_and_refresh(db: Session, obj: User) -> None:
     db.refresh(obj)
 
 
-def get_profile(db: Session, user_id: int):
+def _get_user(db: Session, user_id: int) -> User:
     user = get_user_by_id(db, user_id)
     if not user:
-        raise ValueError(f"User with id {user_id} does not exist.")
+        raise UserNotFound(f"User with id {user_id} does not exist.")
+    return user
+
+
+def get_profile(db: Session, user_id: int):
+    user = _get_user(db, user_id)
 
     return UserResponse.model_validate(user)
 
@@ -37,19 +47,17 @@ def update_profile(
     new_email: str | None = None,
     new_password: str | None = None,
 ):
-    user = get_user_by_id(db, user_id)
-    if not user:
-        raise ValueError(f"User with id {user_id} does not exist.")
+    user = _get_user(db, user_id)
 
     if new_username is not None:
         new_username = new_username.strip()
 
         if not new_username:
-            raise ValueError("Username cannot be empty.")
+            raise InvalidUserDataError("Username cannot be empty.")
 
         if new_username != user.username:
             if not is_username_unique(db, new_username):
-                raise ValueError("Username is already taken.")
+                raise ResourcesAlreadyExistsError("Username is already taken.")
 
             user.username = new_username
 
@@ -57,11 +65,11 @@ def update_profile(
         new_email = new_email.strip()
 
         if not new_email:
-            raise ValueError("Email cannot be empty.")
+            raise InvalidUserDataError("Email cannot be empty.")
 
         if new_email != user.email:
             if not is_email_unique(db, new_email):
-                raise ValueError("Email is already taken.")
+                raise ResourcesAlreadyExistsError("Email is already taken.")
             user.email = new_email
     if new_password is not None:
         password_hash = hash_password(new_password)
@@ -74,9 +82,9 @@ def update_profile(
 
 
 def get_user_details(db: Session, user_id: int):
-    user = get_user_by_id(db, user_id)
+    user = _get_user(db, user_id)
     if not user:
-        raise ValueError(f"User with id {user_id} does not exist.")
+        raise UserNotFound(f"User with id {user_id} does not exist.")
 
     return AdminUserResponse.model_validate(user)
 
@@ -90,13 +98,15 @@ def get_all_users(db: Session, page: int, size: int):
 
 
 def update_user_role(db: Session, user_id: int, new_role: UserRole):
-    user = get_user_by_id(db, user_id)
+    user = _get_user(db, user_id)
 
     if not user:
-        raise ValueError(f"User with id {user_id} does not exist.")
+        raise UserNotFound(f"User with id {user_id} does not exist.")
 
     if user.role == UserRole.ADMIN and new_role != UserRole.ADMIN:
-        raise ValueError("Cannot change role of an admin user to a non-admin role.")
+        raise ResourcesAlreadyExistsError(
+            "Cannot change role of an admin user to a non-admin role."
+        )
 
     user.role = new_role
     user.updated_at = func.now()
