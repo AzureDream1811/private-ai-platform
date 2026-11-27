@@ -15,7 +15,7 @@ from backend.app.modules.user.repository import (
     is_email_unique,
     is_username_unique,
 )
-from backend.app.modules.user.schemas import AdminUserResponse, UserResponse
+from backend.app.modules.user.schemas import AdminUserResponse, Page, UserResponse
 
 
 def _commit_and_refresh(db: Session, obj: User) -> None:
@@ -87,12 +87,18 @@ def get_user_details(db: Session, user_id: int):
     return AdminUserResponse.model_validate(user)
 
 
-def get_all_users(db: Session, page: int, size: int):
+def get_all_users(db: Session, page: int, size: int) -> Page[AdminUserResponse]:
     users, total = get_users(db, page, size)
 
     user_admin_responses = [AdminUserResponse.model_validate(user) for user in users]
 
-    return user_admin_responses, total
+    return Page(
+        items=user_admin_responses,
+        total=total,
+        page=page,
+        size=size,
+        pages=-(-total // size),
+    )
 
 
 def update_user_role(db: Session, user_id: int, new_role: UserRole):
