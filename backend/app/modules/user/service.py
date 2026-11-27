@@ -42,9 +42,27 @@ def update_profile(
         raise ValueError(f"User with id {user_id} does not exist.")
 
     if new_username is not None:
-        user.username = _update_criteria(user.username, new_username, "Username", is_username_unique)
+        new_username = new_username.strip()
+
+        if not new_username:
+            raise ValueError("Username cannot be empty.")
+
+        if new_username != user.username:
+            if not is_username_unique(db, new_username):
+                raise ValueError("Username is already taken.")
+
+            user.username = new_username
+
     if new_email is not None:
-        user.email = _update_criteria(user.email, new_email, "Email", is_email_unique)
+        new_email = new_email.strip()
+
+        if not new_email:
+            raise ValueError("Email cannot be empty.")
+
+        if new_email != user.email:
+            if not is_email_unique(db, new_email):
+                raise ValueError("Email is already taken.")
+            user.email = new_email
     if new_password is not None:
         password_hash = hash_password(new_password)
         user.password_hash = password_hash
@@ -55,27 +73,7 @@ def update_profile(
     return UserResponse.model_validate(user)
 
 
-def _update_criteria(
-    current_value: str,
-    new_value: str,
-    field_name: str,
-    is_unique_func,
-) -> str:
-    new_value = new_value.strip()
-
-    if not new_value:
-        raise ValueError(f"{field_name} cannot be empty.")
-
-    if new_value == current_value:
-        return current_value
-
-    if not is_unique_func(new_value):
-        raise ValueError(f"{field_name} is already in use.")
-
-    return new_value
-
-
-def admin_get_user_details(db: Session, user_id: int):
+def get_user_details(db: Session, user_id: int):
     user = get_user_by_id(db, user_id)
     if not user:
         raise ValueError(f"User with id {user_id} does not exist.")
@@ -83,7 +81,7 @@ def admin_get_user_details(db: Session, user_id: int):
     return AdminUserResponse.model_validate(user)
 
 
-def admin_get_all_users(db: Session, page: int, size: int):
+def get_all_users(db: Session, page: int, size: int):
     users, total = get_users(db, page, size)
 
     user_admin_responses = [AdminUserResponse.model_validate(user) for user in users]
@@ -91,7 +89,7 @@ def admin_get_all_users(db: Session, page: int, size: int):
     return user_admin_responses, total
 
 
-def admin_update_user_role(db: Session, user_id: int, new_role: UserRole):
+def update_user_role(db: Session, user_id: int, new_role: UserRole):
     user = get_user_by_id(db, user_id)
 
     if not user:

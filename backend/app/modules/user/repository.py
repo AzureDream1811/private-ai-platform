@@ -1,5 +1,3 @@
-
-
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -10,13 +8,16 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
     stmt = select(User).where(User.id == user_id)
     return db.scalar(stmt)
 
+
 def is_username_unique(db: Session, username: str) -> bool:
-    stmt = select(User).where(User.username == username)
-    return db.scalar(stmt) is None
+    stmt = select(select(User.id).where(User.username == username).exists())
+    return not db.scalar(stmt)
+
 
 def is_email_unique(db: Session, email: str) -> bool:
-    stmt = select(User).where(User.email == email)
-    return db.scalar(stmt) is None 
+    stmt = select(select(User.id).where(User.email == email).exists())
+    return not db.scalar(stmt)
+
 
 def get_users(db: Session, page: int, size: int) -> tuple[list[User], int]:
     stmt = select(User)
