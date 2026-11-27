@@ -3,17 +3,17 @@ from sqlite3 import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.database.models.ai_service import AIService
-from backend.app.modules.aiservices.exceptions import (
+from backend.app.modules.ai_service.exceptions import (
     ServiceAlreadyExistsError,
     ServiceNotFoundError,
 )
-from backend.app.modules.aiservices.repository import (
+from backend.app.modules.ai_service.repository import (
     create_service,
     delete_service,
     get_service_by_service_key,
     get_services_with_filters,
 )
-from backend.app.modules.aiservices.schemas import ServiceResponse
+from backend.app.modules.ai_service.schemas import ServiceResponse
 
 
 def _get_existing_service(db: Session, service_key: str) -> AIService:

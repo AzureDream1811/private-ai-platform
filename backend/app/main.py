@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 
 from backend.app.core.exception_handlers import register_exception_handlers
-from backend.app.modules.aiservices.router import router as service_router
+from backend.app.modules.ai_service.router import router as service_router
 from backend.app.modules.auth.router import router as auth_router
+from backend.app.modules.user.router import router as user_router
 
 app = FastAPI(
     title="My FastAPI Application",
@@ -17,6 +18,7 @@ app.include_router(
     prefix="/api/v1/services",
     tags=["services"],
 )
+app.include_router(user_router, prefix="/api/v1/users", tags=["users"])
 
 
 @app.get("/health")
