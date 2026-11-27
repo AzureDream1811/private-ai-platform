@@ -8,12 +8,15 @@ from backend.app.database.models.enum import JobStatus
 T = TypeVar("T")
 
 
-class InferenceJobCreateRequest(BaseModel):
+class JobCreateRequest(BaseModel):
     service_id: int
     input_file: str
     parameters: dict | None = None
 
-class InferenceJobResponse(BaseModel):
+class JobUpdateStatusRequest(BaseModel):
+    new_status: JobStatus
+
+class JobResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: int
@@ -22,9 +25,10 @@ class InferenceJobResponse(BaseModel):
     parameters: dict | None
     status: JobStatus
     created_at: datetime
+    updated_at: datetime
 
 
-class InferenceResultResponse(BaseModel):
+class ResultResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: int

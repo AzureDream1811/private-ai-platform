@@ -22,18 +22,18 @@ from backend.app.modules.user.service import (
 
 router = APIRouter()
 DBSession = Annotated[Session, Depends(get_db)]
-CurrentUser = Annotated[User, Depends(get_current_user)]
+current_user = Annotated[User, Depends(get_current_user)]
 
 
 @router.get("/me")
-def get_current_user_profile(db: DBSession, current_user: CurrentUser):
+def get_current_user_profile(db: DBSession, current_user: current_user):
 
     return get_profile(db, current_user.id)
 
 
 @router.patch("/me")
 def update_current_user_profile(
-    db: DBSession, current_user: CurrentUser, request: UpdateUserRequest
+    db: DBSession, current_user: current_user, request: UpdateUserRequest
 ):
 
     return update_profile(

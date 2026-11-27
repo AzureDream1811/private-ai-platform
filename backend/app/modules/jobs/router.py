@@ -8,10 +8,11 @@ from backend.app.database.models.enum import JobStatus
 from backend.app.database.models.user import User
 from backend.app.database.session import get_db
 from backend.app.modules.jobs.schemas import (
-    InferenceJobCreateRequest,
-    InferenceJobResponse,
-    InferenceResultResponse,
+    JobCreateRequest,
+    JobResponse,
+    JobUpdateStatusRequest,
     Page,
+    ResultResponse,
 )
 from backend.app.modules.jobs.service import (
     create_job_service,
@@ -19,6 +20,7 @@ from backend.app.modules.jobs.service import (
     get_job_by_id_service,
     get_job_result_service,
     get_user_jobs_service,
+    update_job_status_service,
 )
 
 router = APIRouter()
@@ -31,14 +33,11 @@ CurrentAdminUser = Annotated[User, Depends(get_current_admin_user)]
 def create_job(
     db: DBSession,
     current_user: CurrentUser,
-    request: InferenceJobCreateRequest,
-) -> InferenceJobResponse:
+    request: JobCreateRequest,
+) -> JobResponse:
 
     return create_job_service(
-        db, current_user.id, 
-        request.service_id, 
-        request.input_file, 
-        request.parameters
+        db, current_user.id, request.service_id, request.input_file, request.parameters
     )
 
 
@@ -49,7 +48,7 @@ def get_user_jobs(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
     status: Annotated[JobStatus | None, Query()] = None,
-) -> Page[InferenceJobResponse]:
+) -> Page[JobResponse]:
 
     return get_user_jobs_service(db, current_user.id, page, size, status)
 
@@ -59,7 +58,7 @@ def get_job_by_id(
     db: DBSession,
     current_user: CurrentUser,
     job_id: int,
-) -> InferenceJobResponse | None:
+) -> JobResponse | None:
 
     return get_job_by_id_service(db, current_user.id, job_id)
 
@@ -69,7 +68,7 @@ def get_job_result(
     db: DBSession,
     current_user: CurrentUser,
     job_id: int,
-) -> InferenceResultResponse | None:
+) -> ResultResponse | None:
 
     return get_job_result_service(db, current_user.id, job_id)
 
@@ -80,6 +79,17 @@ def admin_get_all_jobs(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
     status: Annotated[JobStatus | None, Query()] = None,
-) -> Page[InferenceJobResponse]:
+) -> Page[JobResponse]:
 
     return get_all_jobs_service(db, page, size, status)
+
+
+@router.patch("/{job_id}/status")
+def update_job_status(
+    db: DBSession,
+    current_user: CurrentUser,
+    job_id: int,
+    request: JobUpdateStatusRequest
+) -> JobResponse:
+
+    return update_job_status_service(db, current_user.id, job_id, request.new_status)

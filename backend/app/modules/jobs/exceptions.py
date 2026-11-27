@@ -11,3 +11,10 @@ class JobResultNotFound(NotFoundError):
 
 class ResourcesAlreadyExistsError(ConflictError):
     code = "RESOURCES_ALREADY_EXISTS"
+
+
+class InvalidInputFileError(ConflictError):
+    code = "INVALID_INPUT_FILE"
+
+class JobStatusUpdateError(ConflictError):
+    code = "JOB_STATUS_UPDATE_ERROR"

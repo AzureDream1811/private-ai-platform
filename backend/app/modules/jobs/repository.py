@@ -1,9 +1,18 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from backend.app.database.models.ai_service import AIService
 from backend.app.database.models.enum import JobStatus
 from backend.app.database.models.inference_job import InferenceJob
 from backend.app.database.models.inference_result import InferenceResult
+
+
+def is_service_exists_and_active(db: Session, service_id: int) -> bool:
+    stmt = select(AIService).where(
+        AIService.id == service_id, AIService.is_active == True
+    )
+    result = db.execute(stmt).scalar_one_or_none()
+    return result is not None
 
 
 def create_job(
@@ -51,7 +60,9 @@ def get_user_jobs(
     return list(items), total
 
 
-def get_all_jobs(db: Session, page: int, size: int, status: JobStatus | None = None) -> tuple[list[InferenceJob], int]:
+def get_all_jobs(
+    db: Session, page: int, size: int, status: JobStatus | None = None
+) -> tuple[list[InferenceJob], int]:
     stmt = select(InferenceJob)
     count_stmt = select(func.count())
 
@@ -66,6 +77,7 @@ def get_all_jobs(db: Session, page: int, size: int, status: JobStatus | None = N
         .limit(size)
     ).all()
     return list(items), total
+
 
 def get_job_result(db: Session, user_id: int, job_id: int) -> InferenceResult | None:
     stmt = (
