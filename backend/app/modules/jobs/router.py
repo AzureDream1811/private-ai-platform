@@ -25,7 +25,7 @@ current_user = Annotated[User, Depends(get_current_user)]
 current_admin_user = Annotated[User, Depends(get_current_admin_user)]
 
 
-@router.post("/jobs")
+@router.post("/")
 def create_job(
     db: DBSession,
     current_user: current_user,
@@ -37,7 +37,7 @@ def create_job(
     return create_job_service(db, current_user.id, service_id, input_file, parameters)
 
 
-@router.get("/jobs")
+@router.get("/")
 def get_user_jobs(
     db: DBSession,
     current_user: current_user,
@@ -49,7 +49,7 @@ def get_user_jobs(
     return get_user_jobs_service(db, current_user.id, page, size, status)
 
 
-@router.get("/jobs/{job_id}")
+@router.get("/{job_id}")
 def get_job_by_id(
     db: DBSession,
     current_user: current_user,
@@ -59,7 +59,8 @@ def get_job_by_id(
     return get_job_by_id_service(db, current_user.id, job_id)
 
 
-@router.get("/jobs/{job_id}/result")
+
+@router.get("/{job_id}/result")
 def get_job_result(
     db: DBSession,
     current_user: current_user,
