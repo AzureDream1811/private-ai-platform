@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.dependencies import get_current_admin_user, get_current_user
 from backend.app.database.session import get_db
-from backend.app.modules.aiservices.schemas import (
+from backend.app.modules.ai_service.schemas import (
     CreateServiceRequest,
     PagedServices,
     ServiceResponse,
     UpdateServiceRequest,
 )
-from backend.app.modules.aiservices.service import (
+from backend.app.modules.ai_service.service import (
     create_ai_service,
     delete_ai_service,
     get_service,

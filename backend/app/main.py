@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from backend.app.core.exception_handlers import register_exception_handlers
-from backend.app.modules.aiservices.router import router as service_router
+from backend.app.modules.ai_service.router import router as service_router
 from backend.app.modules.auth.router import router as auth_router
 
 app = FastAPI(
