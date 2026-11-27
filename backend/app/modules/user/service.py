@@ -83,8 +83,6 @@ def update_profile(
 
 def get_user_details(db: Session, user_id: int):
     user = _get_user(db, user_id)
-    if not user:
-        raise UserNotFound(f"User with id {user_id} does not exist.")
 
     return AdminUserResponse.model_validate(user)
 
@@ -99,9 +97,6 @@ def get_all_users(db: Session, page: int, size: int):
 
 def update_user_role(db: Session, user_id: int, new_role: UserRole):
     user = _get_user(db, user_id)
-
-    if not user:
-        raise UserNotFound(f"User with id {user_id} does not exist.")
 
     if user.role == UserRole.ADMIN and new_role != UserRole.ADMIN:
         raise ResourcesAlreadyExistsError(
