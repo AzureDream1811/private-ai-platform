@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from backend.app.database.models.enum import JobStatus
@@ -7,6 +9,7 @@ from backend.app.modules.jobs.exceptions import (
     InvalidInputFileError,
     JobNotFound,
     JobResultNotFound,
+    JobResultNotReady,
     JobStatusUpdateError,
 )
 from backend.app.modules.jobs.repository import (
@@ -23,14 +26,30 @@ from backend.app.modules.jobs.schemas import (
     ResultResponse,
 )
 
+FINISHED_STATUSES = {JobStatus.COMPLETED, JobStatus.FAILED}
+
+ALLOWED_TRANSITIONS = {
+    JobStatus.PENDING: {JobStatus.PROCESSING},
+    JobStatus.PROCESSING: {JobStatus.COMPLETED, JobStatus.FAILED},
+    JobStatus.COMPLETED: set(),
+    JobStatus.FAILED: set(),
+}
+
 
 def _commit_and_refresh(db: Session, obj: InferenceJob) -> None:
     try:
         db.commit()
+        db.refresh(obj)
     except Exception:
         db.rollback()
         raise
-    db.refresh(obj)
+
+
+def _get_job(db, user_id, job_id) -> InferenceJob:
+    job = get_job_by_id(db, user_id=user_id, job_id=job_id)
+    if job is None:
+        raise JobNotFound("Job not found.")
+    return job
 
 
 def create_job_service(
@@ -41,7 +60,7 @@ def create_job_service(
     parameters: dict | None = None,
 ) -> JobResponse:
 
-    if is_service_exists_and_active(db, service_id) is False:
+    if not is_service_exists_and_active(db, service_id):
         raise ServiceNotFoundError("Service not found or inactive.")
 
     input_file = input_file.strip()
@@ -59,9 +78,17 @@ def get_job_by_id_service(db: Session, user_id: int, job_id: int) -> JobResponse
 
 
 def get_job_result_service(db: Session, user_id: int, job_id: int) -> ResultResponse:
+    job = _get_job(db, user_id, job_id)
+
+    if job.status not in FINISHED_STATUSES:
+        raise JobResultNotReady(
+            f"Job is still {job.status.value}. Result is not available yet."
+        )
+
     job_result = get_job_result(db, user_id, job_id)
     if job_result is None:
         raise JobResultNotFound("Job result not found.")
+
     return ResultResponse.model_validate(job_result)
 
 
@@ -69,37 +96,43 @@ def get_user_jobs_service(
     db: Session, user_id: int, page: int, size: int, status: JobStatus | None = None
 ) -> Page[JobResponse]:
     jobs, total = get_user_jobs(db, user_id, page, size, status)
-    job_responses = [JobResponse.model_validate(job) for job in jobs]
-    return Page[JobResponse](
-        items=job_responses, total=total, page=page, size=size, pages=-(-total // size)
-    )
+    return _create_page_response(jobs, total, page, size)
 
 
 def get_all_jobs_service(
     db: Session, page: int, size: int, status: JobStatus | None = None
 ) -> Page[JobResponse]:
     jobs, total = get_all_jobs(db, page, size, status)
+    return _create_page_response(jobs, total, page, size)
+
+
+def _create_page_response(
+    jobs: list[InferenceJob], total: int, page: int, size: int
+) -> Page[JobResponse]:
     job_responses = [JobResponse.model_validate(job) for job in jobs]
     return Page[JobResponse](
         items=job_responses, total=total, page=page, size=size, pages=-(-total // size)
     )
 
 
-def update_job_status_service(
-    db: Session, user_id: int, job_id: int, new_status: JobStatus
-) -> JobResponse:
-    job = _get_job(db, user_id, job_id)
+# Wait for worker to be implemented to refactor this function
 
-    if job.status == new_status:
-        raise JobStatusUpdateError(f"Job is already in status {new_status}.")
+# def update_job_status_service(
+#     db: Session, user_id: int, job_id: int, new_status: JobStatus
+# ) -> JobResponse:
+#     job = _get_job(db, user_id, job_id)
 
-    job.status = new_status
-    _commit_and_refresh(db, job)
-    return JobResponse.model_validate(job)
+#     if new_status not in ALLOWED_TRANSITIONS[job.status]:
+#         raise JobStatusUpdateError(
+#             f"Cannot update status from {job.status.value} to {new_status.value}."
+#         )
 
+#     job.status = new_status
+#     now = datetime.now(UTC)
+#     if new_status == JobStatus.PROCESSING:
+#         job.started_at = now
+#     else:
+#         job.completed_at = now
 
-def _get_job(db, user_id, job_id):
-    job = get_job_by_id(db, user_id=user_id, job_id=job_id)
-    if job is None:
-        raise JobNotFound("Job not found.")
-    return job
+#     _commit_and_refresh(db, job)
+#     return JobResponse.model_validate(job)

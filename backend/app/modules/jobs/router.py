@@ -20,7 +20,7 @@ from backend.app.modules.jobs.service import (
     get_job_by_id_service,
     get_job_result_service,
     get_user_jobs_service,
-    update_job_status_service,
+    # update_job_status_service,
 )
 
 router = APIRouter()
@@ -58,7 +58,7 @@ def get_job_by_id(
     db: DBSession,
     current_user: CurrentUser,
     job_id: int,
-) -> JobResponse | None:
+) -> JobResponse:
 
     return get_job_by_id_service(db, current_user.id, job_id)
 
@@ -68,7 +68,7 @@ def get_job_result(
     db: DBSession,
     current_user: CurrentUser,
     job_id: int,
-) -> ResultResponse | None:
+) -> ResultResponse:
 
     return get_job_result_service(db, current_user.id, job_id)
 
@@ -84,12 +84,12 @@ def admin_get_all_jobs(
     return get_all_jobs_service(db, page, size, status)
 
 
-@router.patch("/{job_id}/status")
-def update_job_status(
-    db: DBSession,
-    current_user: CurrentUser,
-    job_id: int,
-    request: JobUpdateStatusRequest
-) -> JobResponse:
+# @router.patch("/{job_id}/status")
+# def update_job_status(
+#     db: DBSession,
+#     current_user: CurrentUser,
+#     job_id: int,
+#     request: JobUpdateStatusRequest
+# ) -> JobResponse:
 
-    return update_job_status_service(db, current_user.id, job_id, request.new_status)
+#     return update_job_status_service(db, current_user.id, job_id, request.new_status)
