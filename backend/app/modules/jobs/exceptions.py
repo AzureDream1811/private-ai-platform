@@ -16,5 +16,10 @@ class ResourcesAlreadyExistsError(ConflictError):
 class InvalidInputFileError(ConflictError):
     code = "INVALID_INPUT_FILE"
 
+
 class JobStatusUpdateError(ConflictError):
     code = "JOB_STATUS_UPDATE_ERROR"
+
+
+class JobResultNotReady(ConflictError):
+    code = "JOB_RESULT_NOT_READY"
